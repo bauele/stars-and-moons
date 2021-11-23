@@ -6,6 +6,7 @@ import {BootstrapVue} from 'bootstrap-vue'
 
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
+import './custom.scss'
 
 import { GameInstance } from './store/game-instance.js';
 import router from "./router.js";

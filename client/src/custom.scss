@@ -1,0 +1,10 @@
+$theme-colors: (
+  "sm-purple": #6200ff,
+  "sm-pink": #ff005e,
+  "sm-yellow": #fac748,
+  "sm-dark": #191923,
+  "sm-light": #f9e9ec 
+);
+
+@import '../../node_modules/bootstrap/scss/bootstrap';
+@import '../../node_modules/bootstrap-vue/src/index.scss';
