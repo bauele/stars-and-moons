@@ -12,19 +12,18 @@ specific code, such as the server connection logic and game validation.
 The test directory only contains tests on the server logic and is not
 required to run the project.
 
-Download all of the required packages by running the following commands from
+Download all of the required packages by running the following command from
 the root directory
 ```
-npm install ./server
-npm install ./client
+npm install
 ```
 
 ## Running the project
 Run the following commands from the root directory to start the server and the
 web client
 ```
-node ./server server.js
-npm run --prefix ./client serve
+node ./server/server.js
+npm run serve
 ```
 Then simply open a web browser and connect to http://localhost:8080/ to begin
 using the project
