@@ -5,6 +5,7 @@ export const GameInstance = {
         inGame: false,
         clientSocket: null,
         clientPlayerName: null,
+        inviteCode: null,
         chatMessages: [],
         board: null,
     },
@@ -20,6 +21,10 @@ export const GameInstance = {
 
         setInGame(state, value) {
             state.inGame = value;
+        },
+
+        setInviteCode(state, inviteCode) {
+            state.inviteCode = inviteCode;
         },
 
         setChatMessages(state, messages) {
@@ -52,6 +57,10 @@ export const GameInstance = {
             return state.clientPlayerName;
         },
 
+        inviteCode: state => {
+            return state.inviteCode;
+        },
+
         board: state => {
             return state.board;
         }
@@ -60,16 +69,17 @@ export const GameInstance = {
     actions: {
         async connectToServer(context) {
             console.log("Connecting to server...");            
-            const socket = io.connect('http://localhost:3000', {
+            const socket = io.connect('localhost:3000', {
             });
 
             socket.on('connect', () => {
                 console.log("socket object = ", socket);     
             })
 
-            socket.on('game-created', () => {
+            socket.on('game-created', (inviteCode) => {
                 console.log('Creating game...');
                 context.commit('setInGame', true);
+                context.commit('setInviteCode', inviteCode);
             })
 
             socket.on('game-joined', (messages) => {
@@ -88,6 +98,11 @@ export const GameInstance = {
 
             socket.on('board-updated', (board) => {
                 context.commit('updateBoard', board);
+            })
+
+            socket.on('invite-code-generated', (inviteCode) => {
+                console.log('Got response: ', inviteCode);
+                context.commit('setInviteCode', inviteCode);
             })
 
             return socket;
@@ -111,6 +126,7 @@ export const GameInstance = {
             console.log('Connected!');
             context.commit('setClientSocket', clientSocket);
 
+            context.commit('setInviteCode', inviteCode);
             clientSocket.emit('join-game', { inviteCode: inviteCode, playerName: context.getters.clientPlayerName});
         },
 
@@ -129,7 +145,7 @@ export const GameInstance = {
 
         inviteFriend(context, args) {
             console.log('Requesting invite link from server!');
-            context.state.socket.emit('invite-friend');
+            context.getters.clientSocket.emit('invite-friend');
         },
     }
 };

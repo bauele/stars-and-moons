@@ -165,18 +165,6 @@ app.get('/', function (req, res, next) {
     res.sendFile(__dirname + '/index.html');
 });
 
-app.get('/test', function (req, res, next) {
-    res.send({result: 23});
-});
-
-app.get('/newgame', function (req, res, next) {
-    
-});
-
-app.get('/join/*', function (req, res, next) {
-    res.send({result: 'hellO!'});
-});
-
 server.listen(3000, function () {
     console.log(`We are now listening on ${server.address().port} \n`);
 })
@@ -204,7 +192,10 @@ io.on('connection', function (socket) {
         inviteCodeMap.set(gameInstance.getInviteCode(), gameInstance.getInstanceId());
         //console.log("Gengerated invite code: ", gameInstance.getInviteCode());       
 
-        socket.emit('game-created');
+        var playerJoinMessage = `${playerName} has joined the game!`;
+        gameInstance.sendChatMessage(playerJoinMessage);
+
+        socket.emit('game-created', gameInstance.getInviteCode());
         socket.emit('all-messages-received', gameInstance.getChatMessages());
     })
 
@@ -224,12 +215,15 @@ io.on('connection', function (socket) {
             socket.join(gameInstanceId);
             gameInstance.addPlayerSocket(socket.id, data.playerName);
             socket.emit('game-joined');
+
             socket.emit('all-messages-received', gameInstance.getChatMessages());
+    
+            var playerJoinMessage = `${data.playerName} has joined the game!`;
+            gameInstance.sendChatMessage(playerJoinMessage);
+            io.to(gameInstanceId).emit('message-received', playerJoinMessage);
 
             gameInstance.initialize();
-        }
-
-        
+        }        
     })
 
     socket.on('send-chat-message', function (message) {

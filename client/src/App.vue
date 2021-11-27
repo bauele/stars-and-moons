@@ -1,7 +1,6 @@
 <template>
   <div id="app">
     <div v-if='inGame'>
-      <b-button class='mt-1 mb-1' v-on:click='inviteFriend'> Invite Friend </b-button>
       <Game :gameId=this.gameId>
       </Game>
     </div>
@@ -69,10 +68,6 @@ export default {
       this.$store.dispatch('joinGame', this.gameId);
     },
 
-    inviteFriend() {
-      this.$store.dispatch('inviteFriend');
-    },
-
     showModal() {
       this.$refs['name-modal'].show();
     },
@@ -88,12 +83,11 @@ export default {
         this.joinGame();
       }
     }
-
   },
 
   computed: {
     ...mapGetters([
-        'inGame',
+        'inGame',        
     ]),
   }
 }

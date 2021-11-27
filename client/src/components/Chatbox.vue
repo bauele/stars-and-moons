@@ -11,7 +11,7 @@
 
         <b-form v-on:submit.prevent='sendMessage'>
             <b-form-input id='textbox' v-model="text" placeholder='Enter a message'></b-form-input>
-            <b-button id='send-button' v-on:click='sendMessage' v-on:keydown.enter='sendMessage'> Send </b-button>
+            <b-button id='send-button' variant='sm-pink' v-on:click='sendMessage' v-on:keydown.enter='sendMessage'> Send </b-button>
         </b-form>
     </div>
 </template>

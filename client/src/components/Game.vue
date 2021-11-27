@@ -1,6 +1,7 @@
 <template>
   <div>
-      <p>Game Id = {{ gameId }} </p>  
+      <b-button class='mt-1 mb-1' variant='sm-purple' v-on:click='inviteFriend'> Invite Friend </b-button>
+      <p>Invite Code = {{ inviteCode }} </p>  
       <b-row id='game-container'>
         <b-col class lg='auto'>
           <div id="phaser-app"></div>
@@ -9,13 +10,14 @@
           <Chatbox id='chatbox' />
         </b-col>
       </b-row>
+
+      <b-toast id='invite-friend-toast' title='Invite link copied!' variant='sm-yellow'>
+        Paste this link to a friend so they can join your game!
+      </b-toast>
   </div>
 </template>
 
 <script>
-const axios = require("axios");
-const io = require("socket.io-client");
-
 import Chatbox from "./Chatbox.vue";
 import { eventEmitter, createGame } from "../game.js";
 import {
@@ -28,10 +30,6 @@ export default {
     Chatbox,
   },
 
-  props: {
-      gameId: String,
-  },
-
   data: function () {
     return {
         socket: '',
@@ -42,8 +40,6 @@ export default {
   mounted() {
     this.$nextTick(function () {
       createGame();
-      console.log("Route = ", this.$route);
-      console.log("ID = ", this.$route.params.id);
   })
     eventEmitter.on("game-clicked", (area) => {
         this.clickBoard(area);
@@ -56,7 +52,23 @@ export default {
     }
   },
 
-  methods: {
+  methods: {  
+    inviteFriend() {
+      this.$store.dispatch('inviteFriend');    
+      var displayInviteToast = this.$bvToast.show('invite-friend-toast');
+
+      this.$copyText('localhost:8080/' + this.inviteCode).then(
+        function () {
+          displayInviteToast;
+        }(displayInviteToast), 
+          
+        function (e) {
+            alert('Can not copy');
+            console.log(e);
+        }
+      )    
+    },
+
     clickBoard(area) {
       this.$store.dispatch('clickBoard', area);
     }
@@ -65,14 +77,14 @@ export default {
   computed: {
     ...mapGetters([
       'inGame',
-      'board'
+      'board',
+      'inviteCode'
     ]),
   }
 };
 </script>
 
 <style scoped>
-
 #game-container {
   display: flex;
   justify-content: center;
@@ -87,5 +99,4 @@ export default {
   min-width: 320px;
   max-width: 480px;
 }
-
 </style>

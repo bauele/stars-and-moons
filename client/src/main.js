@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import VueRouter from 'vue-router';
 import App from './App.vue'
 import {BootstrapVue} from 'bootstrap-vue'
+import VueClipboard from 'vue-clipboard2'
 
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
@@ -14,6 +15,7 @@ import router from "./router.js";
 Vue.use(BootstrapVue);
 Vue.use(Vuex);
 Vue.use(VueRouter);
+Vue.use(VueClipboard)
 
 Vue.config.productionTip = false
 
