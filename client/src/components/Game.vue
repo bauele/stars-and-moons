@@ -1,8 +1,14 @@
 <template>
   <div>
-        <p>Game Id = {{ gameId }} </p>  
-        <div id="phaser-app"></div>
-        <Chatbox />
+      <p>Game Id = {{ gameId }} </p>  
+      <b-row id='game-container'>
+        <b-col class lg='auto'>
+          <div id="phaser-app"></div>
+        </b-col>
+        <b-col id='chatbox-container' lg='auto'>
+          <Chatbox id='chatbox' />
+        </b-col>
+      </b-row>
   </div>
 </template>
 
@@ -64,3 +70,22 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+
+#game-container {
+  display: flex;
+  justify-content: center;
+}
+
+#chatbox-container {
+  display: flex;
+  justify-content: center;
+}
+
+#chatbox {
+  min-width: 320px;
+  max-width: 480px;
+}
+
+</style>

@@ -1,5 +1,4 @@
 <template>
-<div id='chatbox-container'>
     <div id='chatbox' class='border border-dark'>
         <div id='message-container'>
             <!--    Due to the CSS styling for div 'message', the messages need to be printed out from
@@ -9,12 +8,12 @@
                 {{ message }}
             </div>
         </div>
+
         <b-form v-on:submit.prevent='sendMessage'>
             <b-form-input id='textbox' v-model="text" placeholder='Enter a message'></b-form-input>
             <b-button id='send-button' v-on:click='sendMessage' v-on:keydown.enter='sendMessage'> Send </b-button>
         </b-form>
     </div>
-</div>
 </template>
 
 <script>
@@ -54,24 +53,23 @@ export default {
 <style>
 /*  The properties here center the 'chatbox' div. If removed,
     it will not be centered. */
-#chatbox-container {
-    display: flex;
-    justify-content: center;
-}
-
 #chatbox {
-    margin-top: 5px;
-    width: 480px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    max-height: 480px;
 }
 
 /*  Displaying as flex with a column-reverse make it so that newer
     messages are placed at the bottom of the container and push
     older messages upwards. */
-#message-container {
+#message-container {   
     display: flex;
     flex-direction: column-reverse;
-    max-height: 200px;
+    flex-grow: 1;
     overflow-y: scroll;
+
+    max-width: 100%;
 }
 
 /*  Every message div will be responsible for aligning itself
@@ -82,8 +80,9 @@ export default {
     margin-left: 3px;
 }
 
-#textbox {
+#textbox {    
     margin-top: 10px;
+    align-content: center;   
 }
 
 #send-button {
