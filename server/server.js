@@ -16,6 +16,16 @@ const randomExt = require('random-ext');
 
 var playerSocketGameMap = new Map();
 
+class Message {
+    sender = '';
+    body = '';
+
+    constructor(sender, body) {
+        this.sender = sender;
+        this.body = body;
+    }
+}
+
 class GameInstance  {
     id = -1;
     inviteCode = '';
@@ -186,45 +196,33 @@ io.on('connection', function (socket) {
     console.log('New connection of ', socket.id);
 
     socket.on("disconnect", (reason) => {     
-        console.log('Disconnected from game: ', socket.id);
+        console.log('Disconnected from game: ', socket.id);     
 
         var gameInstance = playerSocketGameMap.get(socket.id);
         var playerName = gameInstance.getPlayerName(socket.id);
         gameInstance.removePlayerSocket(socket.id);
 
-        var playerDisconnectMessage = `${playerName} has disconnected.`;
+        var playerDisconnectMessage = new Message('server', `${playerName} has disconnected.`);
         gameInstance.sendChatMessage(playerDisconnectMessage);
 
         var gameInstanceId = gameInstance.getInstanceId();
         io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
-
-
-        /*
-        var playerName = gameInstance.getPlayerName(socket.id);
-        var playerDisconnectMessage = `${playerName} has left.`;
-        gameInstance.sendChatMessage(playerDisconnectMessage);
-
-        io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
-        */
     });
 
     socket.on('create-game', function (playerName) {
-        //console.log('Creating a new game for ', playerName);
-        
         var gameInstance = createGameInstance(socket.id);
-        gameInstance.sendChatMessage('Welcome to Stars and Moons!');
+
+        var welcomeMessage = new Message('server', 'Welcome to Stars and Moons!');
+        gameInstance.sendChatMessage(welcomeMessage);
         gameInstance.addPlayerSocket(socket.id, playerName);
         activeGames.push(gameInstance);
 
         socket.join(gameInstance.getInstanceId());
-        //console.log("Player joined game instance: ", gameInstance.getInstanceId());
 
-        inviteCodeMap.set(gameInstance.getInviteCode(), gameInstance.getInstanceId());
-        //console.log("Gengerated invite code: ", gameInstance.getInviteCode());       
-
+        inviteCodeMap.set(gameInstance.getInviteCode(), gameInstance.getInstanceId());  
         playerSocketGameMap.set(socket.id, gameInstance);
 
-        var playerJoinMessage = `${playerName} has joined the game!`;
+        var playerJoinMessage = new Message('server', `${playerName} has joined the game!`);
         gameInstance.sendChatMessage(playerJoinMessage);
 
         socket.emit('game-created', gameInstance.getInviteCode());
@@ -240,20 +238,19 @@ io.on('connection', function (socket) {
 
             // Emit an event that would trigger an error page
         }
-        else {
-            //console.log('Found game instance ', gameInstanceId);        
+        else {       
             var gameInstance = activeGames.find(game => game.id == gameInstanceId)
-            //console.log('gameInstance = ', gameInstance);
             socket.join(gameInstanceId);
-            gameInstance.addPlayerSocket(socket.id, data.playerName);
 
+            gameInstance.addPlayerSocket(socket.id, data.playerName);
             playerSocketGameMap.set(socket.id, gameInstance);
 
             socket.emit('game-joined');
             socket.emit('all-messages-received', gameInstance.getChatMessages());
     
-            var playerJoinMessage = `${data.playerName} has joined the game!`;
+            var playerJoinMessage = new Message('server', `${data.playerName} has joined the game!`);            
             gameInstance.sendChatMessage(playerJoinMessage);
+
             io.to(gameInstanceId).emit('message-received', playerJoinMessage);
 
             gameInstance.initialize();
@@ -261,45 +258,20 @@ io.on('connection', function (socket) {
     })
 
     socket.on('send-chat-message', function (message) {
-        //console.log("Chat message was sent to the server: ", message);
-        //console.log('Client is in rooms: ', socket.rooms);
-
         var clientSocketRooms = Array.from(socket.rooms);
         var gameInstanceId = clientSocketRooms.find(room => validate(room));
-        //console.log('Client is in game instance ', gameInstanceId);
-
-        // Get GameRoom object
         var gameInstance = activeGames.find(room => room.id == gameInstanceId);
-        //console.log('Found game = ', gameInstance);
 
-        var sender = message.sender;
-        var content = message.text;
-        var formattedMessage = `${sender}: ${content}`;
+        var playerChatMessage = new Message(message.sender, message.text); 
+        gameInstance.sendChatMessage(playerChatMessage);
 
-        gameInstance.sendChatMessage(formattedMessage);
-        io.to(gameInstanceId).emit('message-received', formattedMessage);
+        io.to(gameInstanceId).emit('message-received', playerChatMessage);
     })
 
     socket.on('invite-friend', function (message) {
-        //console.log('Generating invite code...');
-        //console.log('Client is in room: ', socket.rooms);
+        var game = getActiveGame(socket);
 
-        /*
-        var socketRooms = Array.from(socket.rooms);
-        var gameId = socketRooms.filter(room => validate(room));
-        console.log('Client is in game = ', gameId);
-
-        // Get GameRoom object
-        var game = activeGames.find(room => room.id == gameId);
-        console.log('Found game = ', game);
-        */
-       var game = getActiveGame(socket);
-
-        // Check if the game has an active invite code
-            // If it doesn't have an active invite code, generate one  
-            
         socket.emit('invite-code-generated', game.getInviteCode());
-
     })
 
     socket.on('click-board', function (area) {
@@ -319,9 +291,7 @@ io.on('connection', function (socket) {
                 io.to(game.getInstanceId()).emit('board-updated', game.getBoard());
                 console.log(game.getBoard());
 
-                game.incrementTurn();
-                
-
+                game.incrementTurn();               
             }
             else {
                 socket.emit('board-not-updated', 'That spot is not available.');

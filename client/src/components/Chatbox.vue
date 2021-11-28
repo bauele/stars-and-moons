@@ -5,7 +5,12 @@
                     newest to oldest, which would mean the array would need to be printed out in
                     reverse.    -->
             <div id='message' v-for='message in reverseMessasges' :key='message.id'>
-                {{ message }}
+                <div v-if="message.sender === 'server'" class='serverMessage'>
+                    {{ message.body }}
+                </div>
+                <div v-else>
+                    {{ message.sender }}: {{ message.body }}
+                </div>
             </div>
         </div>
 
@@ -78,6 +83,10 @@ export default {
     display: flex;
     justify-content: left;
     margin-left: 3px;
+}
+
+.serverMessage {
+    color: #fac748;
 }
 
 #textbox {    
