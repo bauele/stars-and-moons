@@ -14,6 +14,8 @@ const { v4: uuidv4 } = require('uuid');
 const { validate } = require('uuid');
 const randomExt = require('random-ext');
 
+var playerSocketGameMap = new Map();
+
 class GameInstance  {
     id = -1;
     inviteCode = '';
@@ -73,6 +75,13 @@ class GameInstance  {
         this.playerSocketMap.set(socketId, playerName);
     }
 
+    removePlayerSocket(socketId) {
+        var playerName = this.playerSocketMap.get(socketId);
+        console.log(`Removing ${socketId} for ${playerName}`);
+
+        this.playerSocketMap.delete(socketId);
+    }
+
     getPlayerTurn() {
         return this.playerTurn;
     }
@@ -88,6 +97,10 @@ class GameInstance  {
         else {
             return 9;
         }
+    }
+
+    getPlayerName(socketId) {
+        return this.playerSocketMap.get(socketId);
     }
 
     incrementTurn() {
@@ -173,9 +186,26 @@ io.on('connection', function (socket) {
     console.log('New connection of ', socket.id);
 
     socket.on("disconnect", (reason) => {     
-        console.log('Disconnected from game: \n');
+        console.log('Disconnected from game: ', socket.id);
 
-        // Update room, push notification
+        var gameInstance = playerSocketGameMap.get(socket.id);
+        var playerName = gameInstance.getPlayerName(socket.id);
+        gameInstance.removePlayerSocket(socket.id);
+
+        var playerDisconnectMessage = `${playerName} has disconnected.`;
+        gameInstance.sendChatMessage(playerDisconnectMessage);
+
+        var gameInstanceId = gameInstance.getInstanceId();
+        io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
+
+
+        /*
+        var playerName = gameInstance.getPlayerName(socket.id);
+        var playerDisconnectMessage = `${playerName} has left.`;
+        gameInstance.sendChatMessage(playerDisconnectMessage);
+
+        io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
+        */
     });
 
     socket.on('create-game', function (playerName) {
@@ -191,6 +221,8 @@ io.on('connection', function (socket) {
 
         inviteCodeMap.set(gameInstance.getInviteCode(), gameInstance.getInstanceId());
         //console.log("Gengerated invite code: ", gameInstance.getInviteCode());       
+
+        playerSocketGameMap.set(socket.id, gameInstance);
 
         var playerJoinMessage = `${playerName} has joined the game!`;
         gameInstance.sendChatMessage(playerJoinMessage);
@@ -214,8 +246,10 @@ io.on('connection', function (socket) {
             //console.log('gameInstance = ', gameInstance);
             socket.join(gameInstanceId);
             gameInstance.addPlayerSocket(socket.id, data.playerName);
-            socket.emit('game-joined');
 
+            playerSocketGameMap.set(socket.id, gameInstance);
+
+            socket.emit('game-joined');
             socket.emit('all-messages-received', gameInstance.getChatMessages());
     
             var playerJoinMessage = `${data.playerName} has joined the game!`;
