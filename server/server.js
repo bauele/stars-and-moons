@@ -71,6 +71,25 @@ class GameInstance  {
         this.board[i][j] = value;
     }
 
+    resetBoard() {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                this.board[i][j] = 0;
+            }
+        }
+    }
+
+    boardFull() {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (this.board[i][j] == 0)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
     boardPositionAvailable(i, j) {
         if (this.getBoardValue(i, j) == 0) {
             return true;
@@ -121,10 +140,23 @@ class GameInstance  {
         else if (players[1][0] == this.playerTurn) {
             this.playerTurn = players[0][0];
         }
+
+        var playerName = this.getPlayerName(this.playerTurn);
+        var playerTurnMessage = new Message('server', `It's ${playerName}'s turn!`);
+        this.sendChatMessage(playerTurnMessage);
+
+        io.to(this.getInstanceId()).emit('message-received', playerTurnMessage);
+    }
+
+    preventTurn() {
+        this.playerTurn = -1;
     }
 
     initialize() {
         // Randomly decide who is going first
+        this.resetBoard(); 
+        io.to(this.getInstanceId()).emit('board-updated', this.getBoard());
+
         var random = Math.floor(Math.random() * 2);
         console.log('random = ', random);
         if (random == 0) {
@@ -138,6 +170,37 @@ class GameInstance  {
         var playerSocket = Array.from(this.playerSocketMap)[random][0];
         this.playerTurn = playerSocket;
         console.log('playerSocket = ', playerSocket);
+
+        var playerName = this.getPlayerName(playerSocket);
+        var playerTurnMessage = new Message('server', `It's ${playerName}'s turn!`);
+        this.sendChatMessage(playerTurnMessage);
+
+        io.to(this.getInstanceId()).emit('message-received', playerTurnMessage);
+    }
+
+    checkForVictory(token) {
+        console.log('Checking for a win using ', token);
+
+        // Check horizontal victories
+        for (let i = 0; i < 3; i++) {
+            if ((this.board[i][0] == token) && (this.board[i][1] == token) && (this.board[i][2] == token))
+                return true;
+        }
+
+        // Check vertical victories
+        for (let j = 0; j < 3; j++) {
+            if ((this.board[0][j] == token) && (this.board[1][j] == token) && (this.board[2][j] == token))
+                return true;
+        }
+
+        // Check diagonal victories
+        if ((this.board[0][0] == token) && (this.board[1][1] == token) && (this.board[2][2] == token))
+            return true;
+
+        if ((this.board[2][0] == token) && (this.board[1][1] == token) && (this.board[0][2] == token))
+            return true;
+
+        return false;        
     }
 }
 
@@ -162,11 +225,9 @@ function createGameInstance() {
 function getActiveGame(clientSocket) {
     var socketRooms = Array.from(clientSocket.rooms);
     var gameId = socketRooms.filter(room => validate(room));
-    console.log('Client is in game = ', gameId);
 
     // Get GameRoom object
     var game = activeGames.find(room => room.id == gameId);
-    console.log('Found game = ', game);
 
     return game;
 }
@@ -275,23 +336,54 @@ io.on('connection', function (socket) {
     })
 
     socket.on('click-board', function (area) {
-        console.log(`Server received the click from: ${socket.id} at ${area.i}, ${area.j}`);
+        //console.log(`Server received the click from: ${socket.id} at ${area.i}, ${area.j}`);
 
         // Obtain game instance based on the socket sending the request
-        var game = getActiveGame(socket);
+        var gameInstance = getActiveGame(socket);
 
         // Check to see if player turn is null, because they can click the board before game has started
 
-        if (game.getPlayerTurn() == socket.id) {
-            console.log('Checking board to see if you can go there...');
+        if (gameInstance.getPlayerTurn() == socket.id) {
+            //console.log('Checking board to see if you can go there...');
 
-            if (game.boardPositionAvailable(area.i, area.j)) {
-                var playerValue = game.getPlayerNumber(socket.id);
-                game.setBoardValue(area.i, area.j, playerValue);
-                io.to(game.getInstanceId()).emit('board-updated', game.getBoard());
-                console.log(game.getBoard());
+            if (gameInstance.boardPositionAvailable(area.i, area.j)) {
+                var playerValue = gameInstance.getPlayerNumber(socket.id);
+                gameInstance.setBoardValue(area.i, area.j, playerValue);
+                io.to(gameInstance.getInstanceId()).emit('board-updated', gameInstance.getBoard());
+                console.log(gameInstance.getBoard());
 
-                game.incrementTurn();               
+                // Check for win condition, increment turn if there is no win condition
+                if (!gameInstance.checkForVictory(playerValue)) {
+                    //If game board is full, it's a draw
+                    if (gameInstance.boardFull()) {
+                        gameInstance.preventTurn();
+
+                        var drawMessage = new Message('server', `It's a draw!`); 
+                        gameInstance.sendChatMessage(drawMessage);    
+                        io.to(gameInstance.getInstanceId()).emit('message-received', drawMessage);    
+                        
+                        var restartMessage = new Message('server', 'Game will restart in 5 seconds...');
+                        io.to(gameInstance.getInstanceId()).emit('message-received', restartMessage);
+    
+                        setTimeout(function() {gameInstance.initialize()}, 5000);
+                    }
+                    else {
+                        gameInstance.incrementTurn();
+                    }
+                }
+                else {
+                    gameInstance.preventTurn();
+
+                    var playerName = gameInstance.getPlayerName(socket.id);
+                    var playerWinMessage = new Message('server', `${playerName} wins!`); 
+                    gameInstance.sendChatMessage(playerWinMessage);    
+                    io.to(gameInstance.getInstanceId()).emit('message-received', playerWinMessage);
+
+                    var restartMessage = new Message('server', 'Game will restart in 5 seconds...');
+                    io.to(gameInstance.getInstanceId()).emit('message-received', restartMessage);
+
+                    setTimeout(function() {gameInstance.initialize()}, 5000);
+                }               
             }
             else {
                 socket.emit('board-not-updated', 'That spot is not available.');

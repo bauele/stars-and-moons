@@ -30,6 +30,8 @@ var boardWidth = null;
 var boardHeight = null;
 var game = null;
 
+var playerTokens = [];
+
 export function createGame() {
     game = new Phaser.Game(config);
 }
@@ -71,7 +73,11 @@ function create() {
         boardHeight = board.displayHeight;
     }
    
-    eventEmitter.on("game-board-updated", (board) => {
+    eventEmitter.on('game-board-updated', (board) => {
+        playerTokens.forEach((token) => {
+           token.destroy();
+        })
+
         var startX = boardXPos;
         var startY = boardYPos;
         var gridSize = boardWidth / 3;
@@ -87,8 +93,10 @@ function create() {
     
                 var value = board[i][j];
                 if (value != 0) {
-                    this.add.text(rectX, rectY, value, { fontFamily: 
+                    var token = this.add.text(rectX, rectY, value, { fontFamily: 
                         'Georgia, "Goudy Bookletter 1911", Times, serif', fontSize: 100 });    
+
+                    playerTokens.push(token);
                 }
             }
         }
