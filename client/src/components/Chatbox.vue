@@ -14,7 +14,7 @@
             </div>
         </div>
 
-        <b-form v-on:submit.prevent='sendMessage'>
+        <b-form id='form-input-parent' inline v-on:submit.prevent='sendMessage'>
             <b-form-input id='textbox' v-model="text" placeholder='Enter a message'></b-form-input>
             <b-button id='send-button' variant='sm-pink' v-on:click='sendMessage' v-on:keydown.enter='sendMessage'> Send </b-button>
         </b-form>
@@ -56,13 +56,33 @@ export default {
 </script>
 
 <style>
-/*  The properties here center the 'chatbox' div. If removed,
-    it will not be centered. */
+/*  Commented out experimenting with media queiries to control
+    the size of the chat box */
+/*
+@media screen and (min-width : 100px) and (max-width : 850px) {
+    #chatbox {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        height: 170px;
+    }
+}
+@media screen and (min-width : 850px) and (max-width : 2850px) {
+    #chatbox {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        height: 480px;
+    }
+}
+*/
+
 #chatbox {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    max-height: 480px;
 }
 
 /*  Displaying as flex with a column-reverse make it so that newer
@@ -71,10 +91,10 @@ export default {
 #message-container {   
     display: flex;
     flex-direction: column-reverse;
-    flex-grow: 1;
-    overflow-y: scroll;
 
-    max-width: 100%;
+    /* Scroll area takes up entire available height */
+    overflow-y: scroll;
+    height: 100%;     
 }
 
 /*  Every message div will be responsible for aligning itself
@@ -82,20 +102,30 @@ export default {
 #message {
     display: flex;
     justify-content: left;
-    margin-left: 3px;
+    margin-left: 3px;    
 }
 
 .serverMessage {
     color: #fac748;
 }
 
+#form-input-parent {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;    
+}
+
 #textbox {    
     margin-top: 10px;
     align-content: center;   
+    flex-grow: 1;
+
+    margin-right: 5px;
+    margin-left: 5px;
 }
 
 #send-button {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    height: 37px;
+    margin: 10px 10px 5px 5px;    
 }
 </style>

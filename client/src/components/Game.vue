@@ -1,12 +1,12 @@
 <template>
-  <div>
-      <b-button class='mt-1 mb-1' variant='sm-purple' v-on:click='inviteFriend'> Invite Friend </b-button>
-      <p>Invite Code = {{ inviteCode }} </p>  
-      <b-row id='game-container'>
-        <b-col class lg='auto'>
+  <b-container class='vh-100'>
+      <b-button class='mt-3 mb-3' variant='sm-purple' v-on:click='inviteFriend'> Invite Friend </b-button>
+     
+     <b-row id='game-container' class='h-75'>
+        <b-col id='game' xs='auto' >
           <div id="phaser-app"></div>
         </b-col>
-        <b-col id='chatbox-container' lg='auto'>
+        <b-col class='h-25' id='chatbox-container' xs='auto'>
           <Chatbox id='chatbox' />
         </b-col>
       </b-row>
@@ -14,7 +14,7 @@
       <b-toast id='invite-friend-toast' title='Invite link copied!' variant='sm-yellow'>
         Paste this link to a friend so they can join your game!
       </b-toast>
-  </div>
+  </b-container>
 </template>
 
 <script>
@@ -95,8 +95,8 @@ export default {
   justify-content: center;
 }
 
-#chatbox {
-  min-width: 320px;
+#chatbox {  
+  flex-grow: 1; 
   max-width: 480px;
 }
 </style>
