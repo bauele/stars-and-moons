@@ -105,6 +105,11 @@ export const GameInstance = {
                 context.commit('setInviteCode', inviteCode);
             })
 
+            socket.on('game-full', () => {
+                alert('Game is already full!');
+                socket.disconnect();
+            })
+
             return socket;
         },
 
@@ -128,6 +133,7 @@ export const GameInstance = {
 
             context.commit('setInviteCode', inviteCode);
             clientSocket.emit('join-game', { inviteCode: inviteCode, playerName: context.getters.clientPlayerName});
+
         },
 
         sendChatMessage(context, message) {
