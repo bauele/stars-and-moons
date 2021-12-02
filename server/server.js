@@ -193,11 +193,17 @@ io.on('connection', function (socket) {
             var playerName = gameInstance.getPlayerName(socket.id);
             gameInstance.removePlayerSocket(socket.id);
 
-            var playerDisconnectMessage = `${playerName} has disconnected.`;
-            gameInstance.sendChatMessage(playerDisconnectMessage);
+            if (gameInstance.playerSocketMap.size != 0) {
+                var playerDisconnectMessage = `${playerName} has disconnected.`;
+                gameInstance.sendChatMessage(playerDisconnectMessage);
 
-            var gameInstanceId = gameInstance.getInstanceId();
-            io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
+                var gameInstanceId = gameInstance.getInstanceId();
+                io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
+            }
+            else if (gameInstance.playerSocketMap.size == 0) {
+                var index = activeGames.find(game => game == gameInstance);
+                activeGames.splice(index, 1);
+            }
         }
     });
 
@@ -251,6 +257,27 @@ io.on('connection', function (socket) {
             gameInstance.initialize();
             return true;
         }        
+    })
+
+    socket.on('show-games', function() {
+        var availableGames = [];
+
+        activeGames.forEach((game) => {
+            if (game.playerSocketMap.size != 2) {
+                var players = Array.from(game.playerSocketMap);
+                var owner = players[0][1];
+                
+                var joinableGame = {owner: owner, 
+                    inviteCode: game.getInviteCode()};
+
+                availableGames.push(joinableGame);
+            }
+        })
+
+        console.log('Available Games = ', availableGames);
+        
+        // Change return object to only contain player and invite code
+        socket.emit('games-found', availableGames);
     })
 
     socket.on('send-chat-message', function (message) {

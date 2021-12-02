@@ -9,9 +9,19 @@
       <div id='main-content'>
         <h1 class='mb-3'>Stars and Moons</h1>
         <b-button class='mr-3 purple-button' v-on:click='createGame' >Create Game</b-button>
-        <b-button class='pink-button'>Join Game</b-button>
+        <b-button class='pink-button' v-on:click='showGames'>Join Game</b-button>
+        
+          <b-row class='mt-3'>
+            <b-col class='game-item'
+              v-for='game in availableGames' :key='game.id'>
+                {{ game.owner }}'s Game
+                <b-button variant='sm-yellow' size='sm' v-on:click='joinAvailableGame(game.inviteCode)'> Join </b-button>
+            </b-col>
+          </b-row>
       </div>
     </div>
+
+
 
       <b-modal id='name-modal' ref='name-modal' 
         header-bg-variant='sm-pink'
@@ -68,6 +78,14 @@ export default {
       this.$store.dispatch('joinGame', this.gameId);
     },
 
+    joinAvailableGame(inviteCode) {
+      this.$store.dispatch('joinGame', inviteCode);
+    },
+
+    showGames() {
+      this.$store.dispatch('showGames');
+    },
+
     showModal() {
       this.$refs['name-modal'].show();
     },
@@ -87,7 +105,8 @@ export default {
 
   computed: {
     ...mapGetters([
-        'inGame',        
+        'inGame',
+        'availableGames',        
     ]),
   }
 }
@@ -114,6 +133,15 @@ export default {
 
 #main-content {
   align-self: center;
+}
+
+.game-item {
+  border: 1px solid grey;
+  margin-top: 3px;
+  margin-left: 3px;
+  margin-right: 3px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .purple-button {
