@@ -56,29 +56,6 @@ export default {
 </script>
 
 <style>
-/*  Commented out experimenting with media queiries to control
-    the size of the chat box */
-/*
-@media screen and (min-width : 100px) and (max-width : 850px) {
-    #chatbox {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-
-        height: 170px;
-    }
-}
-@media screen and (min-width : 850px) and (max-width : 2850px) {
-    #chatbox {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-
-        height: 480px;
-    }
-}
-*/
-
 #chatbox {
     display: flex;
     flex-direction: column;
@@ -94,7 +71,7 @@ export default {
 
     /* Scroll area takes up entire available height */
     overflow-y: scroll;
-    height: 100%;     
+    height: 100%;  
 }
 
 /*  Every message div will be responsible for aligning itself
