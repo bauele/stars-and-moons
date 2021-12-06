@@ -260,17 +260,25 @@ io.on('connection', function (socket) {
         console.log('Disconnected from game: ', socket.id);     
 
         var gameInstance = playerSocketGameMap.get(socket.id);
-        var playerName = gameInstance.getPlayerName(socket.id);
-        gameInstance.removePlayerSocket(socket.id);
+        if (gameInstance) {
+            var playerName = gameInstance.getPlayerName(socket.id);
+            gameInstance.removePlayerSocket(socket.id);
 
-        var playerDisconnectMessage = new Message('server', `${playerName} has disconnected.`);
-        gameInstance.sendChatMessage(playerDisconnectMessage);
+            if (gameInstance.playerSocketMap.size != 0) {
+                var playerDisconnectMessage = new Message('server', `${playerName} has disconnected.`);
+                gameInstance.sendChatMessage(playerDisconnectMessage);
 
-        var gameInstanceId = gameInstance.getInstanceId();
-        io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
+                var gameInstanceId = gameInstance.getInstanceId();
+                io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
+            }
+            else if (gameInstance.playerSocketMap.size == 0) {
+                var index = activeGames.find(game => game == gameInstance);
+                activeGames.splice(index, 1);
+            }
+        }
     });
 
-    socket.on('create-game', function (playerName) {
+    socket.on('create-game', function (playerName) {       
         var gameInstance = createGameInstance(socket.id);
 
         var welcomeMessage = new Message('server', 'Welcome to Stars and Moons!');
@@ -279,8 +287,7 @@ io.on('connection', function (socket) {
         activeGames.push(gameInstance);
 
         socket.join(gameInstance.getInstanceId());
-
-        inviteCodeMap.set(gameInstance.getInviteCode(), gameInstance.getInstanceId());  
+        inviteCodeMap.set(gameInstance.getInviteCode(), gameInstance.getInstanceId());
         playerSocketGameMap.set(socket.id, gameInstance);
 
         var playerJoinMessage = new Message('server', `${playerName} has joined the game!`);
@@ -299,8 +306,15 @@ io.on('connection', function (socket) {
 
             // Emit an event that would trigger an error page
         }
-        else {       
+        else {   
             var gameInstance = activeGames.find(game => game.id == gameInstanceId)
+
+            if (gameInstance.playerSocketMap.size == 2) {
+                socket.emit('game-full');
+                
+                return false;
+            }
+
             socket.join(gameInstanceId);
 
             gameInstance.addPlayerSocket(socket.id, data.playerName);
@@ -315,12 +329,37 @@ io.on('connection', function (socket) {
             io.to(gameInstanceId).emit('message-received', playerJoinMessage);
 
             gameInstance.initialize();
+            return true;
         }        
+    })
+
+    socket.on('show-games', function() {
+        var availableGames = [];
+
+        activeGames.forEach((game) => {
+            if (game.playerSocketMap.size != 2) {
+                var players = Array.from(game.playerSocketMap);
+                var owner = players[0][1];
+                
+                var joinableGame = {owner: owner, 
+                    inviteCode: game.getInviteCode()};
+
+                availableGames.push(joinableGame);
+            }
+        })
+
+        console.log('Available Games = ', availableGames);
+        
+        // Change return object to only contain player and invite code
+        socket.emit('games-found', availableGames);
     })
 
     socket.on('send-chat-message', function (message) {
         var clientSocketRooms = Array.from(socket.rooms);
         var gameInstanceId = clientSocketRooms.find(room => validate(room));
+
+
+        // Get GameRoom object
         var gameInstance = activeGames.find(room => room.id == gameInstanceId);
 
         var playerChatMessage = new Message(message.sender, message.text); 
@@ -330,7 +369,11 @@ io.on('connection', function (socket) {
     })
 
     socket.on('invite-friend', function (message) {
-        var game = getActiveGame(socket);
+       var game = getActiveGame(socket);
+
+        // Check if the game has an active invite code
+            // If it doesn't have an active invite code, generate one              
+        socket.emit('invite-code-generated', game.getInviteCode());
 
         socket.emit('invite-code-generated', game.getInviteCode());
     })

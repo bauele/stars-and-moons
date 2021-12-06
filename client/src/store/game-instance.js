@@ -5,6 +5,7 @@ export const GameInstance = {
         inGame: false,
         clientSocket: null,
         clientPlayerName: null,
+        availableGames: null,
         inviteCode: null,
         chatMessages: [],
         board: null,
@@ -25,6 +26,10 @@ export const GameInstance = {
 
         setInviteCode(state, inviteCode) {
             state.inviteCode = inviteCode;
+        },
+
+        setAvailableGames(state, games) {
+            state.availableGames = games;
         },
 
         setChatMessages(state, messages) {
@@ -57,6 +62,10 @@ export const GameInstance = {
             return state.clientPlayerName;
         },
 
+        availableGames: state => {
+            return state.availableGames;
+        },
+
         inviteCode: state => {
             return state.inviteCode;
         },
@@ -85,7 +94,11 @@ export const GameInstance = {
             socket.on('game-joined', (messages) => {
                 console.log('Successfully joined game!');
                 context.commit('setInGame', true);
-            })
+            }),
+
+            socket.on('games-found', (games => {
+                context.commit('setAvailableGames', games);
+            }));
 
             socket.on('all-messages-received', (messages) => {
                 console.log(messages);
@@ -103,6 +116,11 @@ export const GameInstance = {
             socket.on('invite-code-generated', (inviteCode) => {
                 console.log('Got response: ', inviteCode);
                 context.commit('setInviteCode', inviteCode);
+            })
+
+            socket.on('game-full', () => {
+                alert('Game is already full!');
+                socket.disconnect();
             })
 
             return socket;
@@ -128,6 +146,14 @@ export const GameInstance = {
 
             context.commit('setInviteCode', inviteCode);
             clientSocket.emit('join-game', { inviteCode: inviteCode, playerName: context.getters.clientPlayerName});
+
+        },
+
+        async showGames(context) {
+            var clientSocket = await context.dispatch('connectToServer');
+            context.commit('setClientSocket', clientSocket);
+            
+            clientSocket.emit('show-games');
         },
 
         sendChatMessage(context, message) {
