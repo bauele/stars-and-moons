@@ -28,10 +28,11 @@
         header-border-variant='light'
         body-bg-variant='sm-purple'
         body-text-variant='sm-light'
-        :hide-footer="true" title="Welcome to Stars and Moons!" @ok="modalSetPlayerName">
+        @hidden='modalSetPlayerName'
+        :hide-footer="true" title="Welcome to Stars and Moons!" >
 
         <p class="my-4">What should we call you?</p>
-        <b-form-input v-model='playerName'  placeholder="Enter your name"></b-form-input>
+        <b-form-input v-model='playerName'  :placeholder=this.randomName></b-form-input>
         <b-button variant='sm-dark' class='mt-4' @click='modalSetPlayerName'> Submit </b-button>
     </b-modal>
   </div>
@@ -56,6 +57,7 @@ export default {
   data: function () {
     return {
       gameId: '',
+      randomName: '',
       playerName: '',
       browseGames: false,
       requestGameTimer: ''
@@ -64,6 +66,7 @@ export default {
 
   mounted() {
     this.$nextTick(function () {
+      this.randomName = this.generateRandomName();
       this.$bvModal.show('name-modal');
     })
   },
@@ -96,18 +99,32 @@ export default {
         this.requestGameTimer = setInterval(function() {
           store.dispatch('showGames');
         }, 1000, store);
-
       }
-
     },
 
     showModal() {
       this.$refs['name-modal'].show();
     },
 
-    modalSetPlayerName() {
-      console.log(this.playerName);
+generateRandomName() {
+      var randomNumber = Math.floor(Math.random() * 20);
+      var names = [
+        'unusual-coder', 'trivial-mastermind', 'aqua-devotee', 'brilliant-light',
+        'forever-zone', 'lost-melody', 'eternal-august', 'ghost-flower', 'neo-noir',
+        'random-sequence', 'forgotten-saga', 'last-hope', 'macbook-zealot', 'pc-guru',
+        'horse-girl', 'social-devourer', 'cookie-monster', 'fresh-shower', 'rock-tumble',
+        'git-commit' 
+      ];
+
+      return names[randomNumber];
+    },
+
+    modalSetPlayerName() {      
       this.$bvModal.hide('name-modal');
+      if (this.playerName == '') {
+        this.playerName = this.randomName;
+      }
+
       this.$store.commit('setClientPlayerName', this.playerName);
 
       this.gameId = this.$route.params.id;
