@@ -1,6 +1,11 @@
 <template>
   <b-container id='page-container'>
-    <b-button class='mt-3 mb-3' variant='sm-purple' v-on:click='inviteFriend'> Invite Friend </b-button>     
+
+    <div id='button-container'>
+    <b-button id='leave-button' class='mt-3 mb-3' variant='sm-pink' v-on:click='leaveGame'> Leave Game </b-button>   
+      <b-button id='invite-button' class='mt-3 mb-3' variant='sm-purple' v-on:click='inviteFriend'> Invite Friend </b-button>     
+    </div>
+
     <b-row id='game-container'>
       <b-col id='game' xs='12' lg='6'>
         <div id="phaser-app"></div>
@@ -52,6 +57,10 @@ export default {
   },
 
   methods: {  
+    leaveGame() {
+      this.$store.dispatch('leaveGame');
+    },
+
     inviteFriend() {
       this.$store.dispatch('inviteFriend');    
       var displayInviteToast = this.$bvToast.show('invite-friend-toast');
@@ -90,6 +99,20 @@ export default {
   justify-content: center;
 }
 
+#button-container {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+#leave-button {
+  width: 25%;
+  align-content: center;
+}
+
+#invite-button {
+  width: 25%;
+}
+
 @media (min-width : 992px) {
     #chatbox-container {
       display: flex;
@@ -109,7 +132,6 @@ export default {
 }
 
 #game-container {
-
   display: flex;
   align-items: center;
   flex-grow: 1;

@@ -244,7 +244,6 @@ app.use(function(req, res, next) {
     */
   });
 
-
 app.get('/', function (req, res, next) {
     res.sendFile(__dirname + '/index.html');
 });
@@ -334,6 +333,10 @@ io.on('connection', function (socket) {
             gameInstance.initialize();
             return true;
         }        
+    })
+
+    socket.on('leave-game', function() {
+        socket.emit('game-left');
     })
 
     socket.on('show-games', function() {

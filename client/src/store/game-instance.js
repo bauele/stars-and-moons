@@ -96,6 +96,10 @@ export const GameInstance = {
                 context.commit('setInGame', true);
             }),
 
+            socket.on('game-left', () => {
+                context.commit('setInGame', false);
+            })
+
             socket.on('games-found', (games => {
                 context.commit('setAvailableGames', games);
             }));
@@ -155,7 +159,10 @@ export const GameInstance = {
 
             context.commit('setInviteCode', inviteCode);
             clientSocket.emit('join-game', { inviteCode: inviteCode, playerName: context.getters.clientPlayerName});
+        },
 
+        leaveGame(context) {
+            context.getters.clientSocket.emit('leave-game');
         },
 
         async showGames(context) {
