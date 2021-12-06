@@ -43,6 +43,13 @@ function getActiveGame(clientSocket) {
     return game;
 }
 
+function removeActiveGame(gameInstance) {
+    var index = activeGames.find(game => 
+        game.getInstanceId() == gameInstance.getInstanceId());
+    activeGames.splice(index, 1);
+    inviteCodeGameMap.delete(gameInstance.getInviteCode());  
+}
+
 class Message {
     sender = '';
     body = '';
@@ -103,8 +110,21 @@ class GameInstance  {
         }
     }
 
-    getPlayerName(socketId) {
+    getPlayerNameBySocket(socketId) {
         return this.playerSocketNameMap.get(socketId);
+    }
+
+    getPlayerNameByNumber(playerNumber) {
+        if (playerNumber <= 0) {
+            return null;
+        }
+        else if (playerNumber > this.getPlayerCount()) {
+            return null;
+        }
+        else {
+            var playerArray = Array.from(this.playerSocketNameMap);
+            return playerArray[playerNumber-1][1];
+        }
     }
 
     getPlayerTurn() {
@@ -336,12 +356,38 @@ io.on('connection', function (socket) {
                 var playerTurnMessage = gameInstance.sendPlayerTurnMessage();
                 io.to(gameInstanceId).emit('message-received', playerTurnMessage);
 
+                // Ensure that both players are seeing the same exact board
+                io.to(gameInstance.getInstanceId())
+                    .emit('board-updated', gameInstance.getBoard());
+
                 return true;
             }
         }        
     })
 
     socket.on('leave-game', function() {
+        var gameInstance = playerSocketGameMap.get(socket.id);
+        gameInstance.removePlayer(socket.id);
+        
+        socket.leave(gameInstance.getInstanceId());
+
+        if (gameInstance.getPlayerCount() == 0) {
+            removeActiveGame(gameInstance);
+        }
+        else {
+            var playerName = playerSocketNameMap.get(socket.id);
+            var playerDisconnectMessage = 
+                gameInstance.sendPlayerDisconnectMessage(playerName); 
+    
+            var gameInstanceId = gameInstance.getInstanceId();
+            io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
+        }
+
+        gameInstance.resetBoard();
+        var boardResetMessage = new Message('server', 'Game will be restarted once new player joins.')
+        gameInstance.sendChatMessage(boardResetMessage);
+        io.to(gameInstanceId).emit('message-received', boardResetMessage);
+
         socket.emit('game-left');
     })
 
@@ -349,10 +395,9 @@ io.on('connection', function (socket) {
         var availableGames = [];
 
         activeGames.forEach((game) => {
-            if (game.playerSocketNameMap.size != 2) {
-                var players = Array.from(game.playerSocketNameMap);
-                var owner = players[0][1];
-                
+            if (game.getPlayerCount() != 2) {
+                var owner = game.getPlayerNameByNumber(1);
+
                 var joinableGame = {owner: owner, 
                     inviteCode: game.getInviteCode()};
 
@@ -377,10 +422,7 @@ io.on('connection', function (socket) {
     })
 
     socket.on('invite-friend', function (message) {
-       var game = getActiveGame(socket);
-
-        // Check if the game has an active invite code
-            // If it doesn't have an active invite code, generate one            
+       var game = getActiveGame(socket);        
         socket.emit('invite-code-generated', game.getInviteCode());
     })
 
@@ -421,7 +463,7 @@ io.on('connection', function (socket) {
                 else {
                     gameInstance.preventTurn();
 
-                    var playerName = gameInstance.getPlayerName(socket.id);
+                    var playerName = gameInstance.getPlayerNameBySocket(socket.id);
                     var playerWinMessage = new Message('server', `${playerName} wins!`); 
                     gameInstance.sendChatMessage(playerWinMessage);    
                     io.to(gameInstance.getInstanceId()).emit('message-received', playerWinMessage);
