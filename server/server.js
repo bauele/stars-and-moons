@@ -44,8 +44,10 @@ function getActiveGame(clientSocket) {
 }
 
 function removeActiveGame(gameInstance) {
-    var index = activeGames.find(game => 
+    var index = activeGames.findIndex(game => 
         game.getInstanceId() == gameInstance.getInstanceId());
+    console.log("Index = ", index);
+    
     activeGames.splice(index, 1);
     inviteCodeGameMap.delete(gameInstance.getInviteCode());  
 }
