@@ -14,7 +14,34 @@ const { v4: uuidv4 } = require('uuid');
 const { validate } = require('uuid');
 const randomExt = require('random-ext');
 
+// Map containg a player's socket id and their chosen name
+var playerSocketNameMap = new Map();
+
+// Map containg a player's socket id and their active game
 var playerSocketGameMap = new Map();
+
+// Map containing invite codes and game instance ids
+var inviteCodeGameMap = new Map();
+
+var activeGames = [];
+
+var uuidRestrictedCharacters = 
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+
+function getGameById(id) {
+    var gameInstance = activeGames.find(game => game.id == id)
+    return gameInstance;
+}
+
+function getActiveGame(clientSocket) {
+    var socketRooms = Array.from(clientSocket.rooms);
+    var gameId = socketRooms.filter(room => validate(room));
+
+    // Get GameRoom object
+    var game = activeGames.find(room => room.id == gameId);
+
+    return game;
+}
 
 class Message {
     sender = '';
@@ -27,28 +54,28 @@ class Message {
 }
 
 class GameInstance  {
-    id = -1;
-    inviteCode = '';
-    playerSocketMap = new Map();
-    playerTurn = '';
-    board = [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0]
-
-    ];
+    id;
+    inviteCode;
+    playerSocketNameMap = new Map();
+    playerTurn;
+    board;
     messages = [];
 
-    sendChatMessage(message) {
-        this.messages.push(message);
-    }
+    constructor() {
+        this.id = uuidv4();
+        this.inviteCode = randomExt.restrictedString(uuidRestrictedCharacters, 8, 8);
+        this.playerSocketNameMap = new Map();
 
-    setChatMessages(messages) {
-        this.messages = messages;
-    }
+        // Randomly choose a player to go first
+        this.playerTurn = Math.floor(Math.random() * 2);
+        this.board = [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ];
 
-    getChatMessages(messages) {
-        return this.messages;
+        var welcomeMessage = new Message('server', 'Welcome to Stars and Moons!');
+        this.sendChatMessage(welcomeMessage);
     }
 
     getInstanceId() {
@@ -59,16 +86,81 @@ class GameInstance  {
         return this.inviteCode;
     }
 
-    getBoardValue(i, j) {
-        return this.board[i][j];
+    getPlayerCount() {
+        return this.playerSocketNameMap.size;
+    }
+
+    getPlayerNumber(socketId) {
+        var players = Array.from(this.playerSocketNameMap);
+        if (players[0][0] == socketId) {
+            return 1;
+        }
+        else if (players[1][0] == socketId) {
+            return 2;
+        }
+        else {
+            return -1;
+        }
+    }
+
+    getPlayerName(socketId) {
+        return this.playerSocketNameMap.get(socketId);
+    }
+
+    getPlayerTurn() {
+        return this.playerTurn;
     }
 
     getBoard() {
         return this.board;
     }
 
+    getBoardValue(i, j) {
+        return this.board[i][j];
+    }
+
     setBoardValue(i, j, value) {
         this.board[i][j] = value;
+    }
+
+    getChatMessages() {
+        return this.messages;
+    }
+
+    addPlayer(socketId, playerName) {
+        console.log(`Added ${socketId} for ${playerName}`);
+        this.playerSocketNameMap.set(socketId, playerName);
+    }
+
+    removePlayer(socketId) {
+        var playerName = this.playerSocketNameMap.get(socketId);
+        console.log(`Removing ${socketId} for ${playerName}`);
+        this.playerSocketNameMap.delete(socketId);
+    }
+
+    sendChatMessage(message) {
+        this.messages.push(message);
+        return message;
+    }
+
+    sendPlayerJoinMessage(playerName) {
+        var playerJoinMessage = new Message('server', `${playerName} has joined
+            the game!`);
+        return this.sendChatMessage(playerJoinMessage);        
+    }
+
+    sendPlayerDisconnectMessage(playerName) {
+        var playerDisconnectMessage = new Message('server', `${playerName} has left.`);
+        return this.sendChatMessage(playerDisconnectMessage);        
+    }
+
+    sendPlayerTurnMessage() {
+        var playerTurn = this.playerTurn;
+        var playerName = this.playerSocketNameMap.get(playerTurn);
+
+        var playerTurnMessage = new Message('server', `It's ${playerName}'s 
+            turn!`);
+        return this.sendChatMessage(playerTurnMessage);
     }
 
     resetBoard() {
@@ -77,17 +169,6 @@ class GameInstance  {
                 this.board[i][j] = 0;
             }
         }
-    }
-
-    boardFull() {
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                if (this.board[i][j] == 0)
-                    return false;
-            }
-        }
-
-        return true;
     }
 
     boardPositionAvailable(i, j) {
@@ -99,83 +180,36 @@ class GameInstance  {
         }
     }
 
-    addPlayerSocket(socketId, playerName) {
-        console.log(`Added ${socketId} for ${playerName}`);
-        this.playerSocketMap.set(socketId, playerName);
-    }
-
-    removePlayerSocket(socketId) {
-        var playerName = this.playerSocketMap.get(socketId);
-        console.log(`Removing ${socketId} for ${playerName}`);
-
-        this.playerSocketMap.delete(socketId);
-    }
-
-    getPlayerTurn() {
-        return this.playerTurn;
-    }
-
-    getPlayerNumber(socketId) {
-        var players = Array.from(this.playerSocketMap);
-        if (players[0][0] == socketId) {
-            return 1;
+    boardFull() {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (this.boardPositionAvailable(i, j))
+                    return false;
+            }
         }
-        else if (players[1][0] == socketId) {
-            return 2;
-        }
-        else {
-            return 9;
-        }
+        return true;
     }
 
-    getPlayerName(socketId) {
-        return this.playerSocketMap.get(socketId);
+    startGame() {
+        this.resetBoard(); 
+
+        var random = Math.floor(Math.random() * 2);
+        var playerSocket = Array.from(this.playerSocketNameMap)[random][0];
+        this.playerTurn = playerSocket;
     }
 
     incrementTurn() {
-        var players = Array.from(this.playerSocketMap);
+        var players = Array.from(this.playerSocketNameMap);
         if (players[0][0] == this.playerTurn) {
             this.playerTurn = players[1][0];
         }
         else if (players[1][0] == this.playerTurn) {
             this.playerTurn = players[0][0];
         }
-
-        var playerName = this.getPlayerName(this.playerTurn);
-        var playerTurnMessage = new Message('server', `It's ${playerName}'s turn!`);
-        this.sendChatMessage(playerTurnMessage);
-
-        io.to(this.getInstanceId()).emit('message-received', playerTurnMessage);
     }
 
     preventTurn() {
         this.playerTurn = -1;
-    }
-
-    initialize() {
-        // Randomly decide who is going first
-        this.resetBoard(); 
-        io.to(this.getInstanceId()).emit('board-updated', this.getBoard());
-
-        var random = Math.floor(Math.random() * 2);
-        console.log('random = ', random);
-        if (random == 0) {
-            console.log('Player 1 goes first');
-        }
-        else {
-            console.log('Player 2 goes first');
-        }
-
-        console.log(this.playerSocketMap);
-        var playerSocket = Array.from(this.playerSocketMap)[random][0];
-        this.playerTurn = playerSocket;
-        console.log('playerSocket = ', playerSocket);
-
-        var playerName = this.getPlayerName(playerSocket);
-        var playerTurnMessage = new Message('server', `It's ${playerName}'s turn!`);
-        this.sendChatMessage(playerTurnMessage);
-
-        io.to(this.getInstanceId()).emit('message-received', playerTurnMessage);
     }
 
     checkForVictory(token) {
@@ -183,53 +217,29 @@ class GameInstance  {
 
         // Check horizontal victories
         for (let i = 0; i < 3; i++) {
-            if ((this.board[i][0] == token) && (this.board[i][1] == token) && (this.board[i][2] == token))
-                return true;
+            if ((this.board[i][0] == token) 
+                && (this.board[i][1] == token) && (this.board[i][2] == token))
+                    return true;
         }
 
         // Check vertical victories
         for (let j = 0; j < 3; j++) {
-            if ((this.board[0][j] == token) && (this.board[1][j] == token) && (this.board[2][j] == token))
-                return true;
+            if ((this.board[0][j] == token) 
+                && (this.board[1][j] == token) && (this.board[2][j] == token))
+                    return true;
         }
 
         // Check diagonal victories
-        if ((this.board[0][0] == token) && (this.board[1][1] == token) && (this.board[2][2] == token))
-            return true;
+        if ((this.board[0][0] == token) 
+            && (this.board[1][1] == token) && (this.board[2][2] == token))
+                return true;
 
-        if ((this.board[2][0] == token) && (this.board[1][1] == token) && (this.board[0][2] == token))
-            return true;
+        if ((this.board[2][0] == token) 
+            && (this.board[1][1] == token) && (this.board[0][2] == token))
+                return true;
 
         return false;        
     }
-}
-
-var activeGames = [];
-const inviteCodeMap = new Map();
-var restrictedCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
-
-function createGameInstance() {
-    var game = new GameInstance();    
-
-    game.id = uuidv4();
-    game.inviteCode = randomExt.restrictedString(restrictedCharacters, 8, 8);
-    board = [
-        [-1, -1, -1],
-        [-1, -1, -1],
-        [-1, -1, -1]
-    ];
-
-    return game;
-}
-
-function getActiveGame(clientSocket) {
-    var socketRooms = Array.from(clientSocket.rooms);
-    var gameId = socketRooms.filter(room => validate(room));
-
-    // Get GameRoom object
-    var game = activeGames.find(room => room.id == gameId);
-
-    return game;
 }
 
 console.log("Hello from the server!");
@@ -255,83 +265,79 @@ server.listen(3000, function () {
 io.on('connection', function (socket) {
     console.log('New connection of ', socket.id);
 
-    socket.on("disconnect", (reason) => {     
+    socket.on('disconnect', (reason) => {     
         console.log('Disconnected from game: ', socket.id);     
 
         var gameInstance = playerSocketGameMap.get(socket.id);
         if (gameInstance) {
-            var playerName = gameInstance.getPlayerName(socket.id);
-            gameInstance.removePlayerSocket(socket.id);
+            var playerName = playerSocketNameMap.get(socket.id);
+            gameInstance.removePlayer(socket.id);
 
-            if (gameInstance.playerSocketMap.size != 0) {
-                var playerDisconnectMessage = new Message('server', `${playerName} has disconnected.`);
-                gameInstance.sendChatMessage(playerDisconnectMessage);
-
+            if (gameInstance.getPlayerCount() != 0) {
+                var playerDisconnectMessage =
+                    gameInstance.sendPlayerDisconnectMessage(playerName);
+                
                 var gameInstanceId = gameInstance.getInstanceId();
                 io.to(gameInstanceId).emit('message-received', playerDisconnectMessage);
             }
-            else if (gameInstance.playerSocketMap.size == 0) {
+            else if (gameInstance.getPlayerCount() == 0) {
                 var index = activeGames.find(game => game == gameInstance);
                 activeGames.splice(index, 1);
-
-                inviteCodeMap.delete(gameInstance.getInviteCode());
+                inviteCodeGameMap.delete(gameInstance.getInviteCode());
             }
+
+            playerSocketNameMap.delete(socket.id);
         }
     });
 
     socket.on('create-game', function (playerName) {       
-        var gameInstance = createGameInstance(socket.id);
-
-        var welcomeMessage = new Message('server', 'Welcome to Stars and Moons!');
-        gameInstance.sendChatMessage(welcomeMessage);
-        gameInstance.addPlayerSocket(socket.id, playerName);
+        var gameInstance = new GameInstance();
+        gameInstance.addPlayer(socket.id, playerName);
+        gameInstance.sendPlayerJoinMessage(playerName);
         activeGames.push(gameInstance);
 
         socket.join(gameInstance.getInstanceId());
-        inviteCodeMap.set(gameInstance.getInviteCode(), gameInstance.getInstanceId());
+        inviteCodeGameMap.set(gameInstance.getInviteCode(), 
+            gameInstance.getInstanceId());
         playerSocketGameMap.set(socket.id, gameInstance);
-
-        var playerJoinMessage = new Message('server', `${playerName} has joined the game!`);
-        gameInstance.sendChatMessage(playerJoinMessage);
+        playerSocketNameMap.set(socket.id, playerName);
 
         socket.emit('game-created', gameInstance.getInviteCode());
         socket.emit('all-messages-received', gameInstance.getChatMessages());
     })
 
     socket.on('join-game', function (data) {
-        //console.log(`Looking up invite code ${data.inviteCode}...`);
-
-        var gameInstanceId = inviteCodeMap.get(data.inviteCode);
+        var gameInstanceId = inviteCodeGameMap.get(data.inviteCode);
         if (typeof gameInstanceId === 'undefined') {
             console.log('Invite code does not exist');
             socket.emit('game-unavailable');
-
-            // Emit an event that would trigger an error page
         }
         else {   
-            var gameInstance = activeGames.find(game => game.id == gameInstanceId)
+            var gameInstance = getGameById(gameInstanceId);
 
-            if (gameInstance.playerSocketMap.size == 2) {
-                socket.emit('game-full');
-                
+            if (gameInstance.getPlayerCount() == 2) {
+                socket.emit('game-full');                
                 return false;
             }
+            else {
+                gameInstance.addPlayer(socket.id, data.playerName);
+                var playerJoinMessage = 
+                    gameInstance.sendPlayerJoinMessage(data.playerName);
 
-            socket.join(gameInstanceId);
-
-            gameInstance.addPlayerSocket(socket.id, data.playerName);
-            playerSocketGameMap.set(socket.id, gameInstance);
-
-            socket.emit('game-joined');
-            socket.emit('all-messages-received', gameInstance.getChatMessages());
+                socket.join(gameInstanceId); 
+                playerSocketGameMap.set(socket.id, gameInstance);
+                playerSocketNameMap.set(socket.id, data.playerName);
     
-            var playerJoinMessage = new Message('server', `${data.playerName} has joined the game!`);            
-            gameInstance.sendChatMessage(playerJoinMessage);
+                socket.emit('game-joined');
+                socket.emit('all-messages-received', gameInstance.getChatMessages());
+                socket.to(gameInstanceId).emit('message-received', playerJoinMessage);
+    
+                gameInstance.startGame();
+                var playerTurnMessage = gameInstance.sendPlayerTurnMessage();
+                io.to(gameInstanceId).emit('message-received', playerTurnMessage);
 
-            io.to(gameInstanceId).emit('message-received', playerJoinMessage);
-
-            gameInstance.initialize();
-            return true;
+                return true;
+            }
         }        
     })
 
@@ -343,8 +349,8 @@ io.on('connection', function (socket) {
         var availableGames = [];
 
         activeGames.forEach((game) => {
-            if (game.playerSocketMap.size != 2) {
-                var players = Array.from(game.playerSocketMap);
+            if (game.playerSocketNameMap.size != 2) {
+                var players = Array.from(game.playerSocketNameMap);
                 var owner = players[0][1];
                 
                 var joinableGame = {owner: owner, 
@@ -361,12 +367,8 @@ io.on('connection', function (socket) {
     })
 
     socket.on('send-chat-message', function (message) {
-        var clientSocketRooms = Array.from(socket.rooms);
-        var gameInstanceId = clientSocketRooms.find(room => validate(room));
-
-
-        // Get GameRoom object
-        var gameInstance = activeGames.find(room => room.id == gameInstanceId);
+        var gameInstance = getActiveGame(socket);
+        var gameInstanceId = gameInstance.getInstanceId();
 
         var playerChatMessage = new Message(message.sender, message.text); 
         gameInstance.sendChatMessage(playerChatMessage);
@@ -378,27 +380,19 @@ io.on('connection', function (socket) {
        var game = getActiveGame(socket);
 
         // Check if the game has an active invite code
-            // If it doesn't have an active invite code, generate one              
-        socket.emit('invite-code-generated', game.getInviteCode());
-
+            // If it doesn't have an active invite code, generate one            
         socket.emit('invite-code-generated', game.getInviteCode());
     })
 
     socket.on('click-board', function (area) {
-        //console.log(`Server received the click from: ${socket.id} at ${area.i}, ${area.j}`);
-
-        // Obtain game instance based on the socket sending the request
         var gameInstance = getActiveGame(socket);
-
-        // Check to see if player turn is null, because they can click the board before game has started
-
         if (gameInstance.getPlayerTurn() == socket.id) {
-            //console.log('Checking board to see if you can go there...');
-
             if (gameInstance.boardPositionAvailable(area.i, area.j)) {
                 var playerValue = gameInstance.getPlayerNumber(socket.id);
                 gameInstance.setBoardValue(area.i, area.j, playerValue);
-                io.to(gameInstance.getInstanceId()).emit('board-updated', gameInstance.getBoard());
+
+                io.to(gameInstance.getInstanceId())
+                    .emit('board-updated', gameInstance.getBoard());
                 console.log(gameInstance.getBoard());
 
                 // Check for win condition, increment turn if there is no win condition
@@ -418,6 +412,10 @@ io.on('connection', function (socket) {
                     }
                     else {
                         gameInstance.incrementTurn();
+                        var playerTurnMessage = 
+                            gameInstance.sendPlayerTurnMessage();
+                        io.to(gameInstance.getInstanceId())
+                            .emit('message-received', playerTurnMessage);
                     }
                 }
                 else {
@@ -431,7 +429,15 @@ io.on('connection', function (socket) {
                     var restartMessage = new Message('server', 'Game will restart in 5 seconds...');
                     io.to(gameInstance.getInstanceId()).emit('message-received', restartMessage);
 
-                    setTimeout(function() {gameInstance.initialize()}, 5000);
+                    setTimeout(function() {
+                        gameInstance.startGame();
+                        var playerTurnMessage = 
+                            gameInstance.sendPlayerTurnMessage();
+                        io.to(gameInstance.getInstanceId())
+                            .emit('board-updated', gameInstance.getBoard());
+                        io.to(gameInstance.getInstanceId())
+                            .emit('message-received', playerTurnMessage);
+                    }, 5000);
                 }               
             }
             else {
