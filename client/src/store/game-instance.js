@@ -123,6 +123,15 @@ export const GameInstance = {
                 socket.disconnect();
             })
 
+            socket.on('game-unavailable', () => {
+                alert('Invite code is invalid.');
+            
+                // Remove invalid invite code from URL
+                window.history.pushState('object or string', 'Title', '/');
+
+                socket.disconnect();
+            })
+
             return socket;
         },
 

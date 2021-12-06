@@ -274,6 +274,8 @@ io.on('connection', function (socket) {
             else if (gameInstance.playerSocketMap.size == 0) {
                 var index = activeGames.find(game => game == gameInstance);
                 activeGames.splice(index, 1);
+
+                inviteCodeMap.delete(gameInstance.getInviteCode());
             }
         }
     });
@@ -303,6 +305,7 @@ io.on('connection', function (socket) {
         var gameInstanceId = inviteCodeMap.get(data.inviteCode);
         if (typeof gameInstanceId === 'undefined') {
             console.log('Invite code does not exist');
+            socket.emit('game-unavailable');
 
             // Emit an event that would trigger an error page
         }
