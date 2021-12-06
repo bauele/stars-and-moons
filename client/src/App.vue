@@ -11,7 +11,8 @@
         <b-button class='mr-3 purple-button' v-on:click='createGame' >Create Game</b-button>
         <b-button class='pink-button' v-on:click='showGames'>Join Game</b-button>
         
-          <b-row class='mt-3'>
+          <b-row v-if='browseGames' class='mt-3'>
+            <p v-if='availableGames.length==0'>Looks like there's no games right now. Wanna create one?</p>
             <b-col class='game-item'
               v-for='game in availableGames' :key='game.id'>
                 {{ game.owner }}'s Game
@@ -20,8 +21,6 @@
           </b-row>
       </div>
     </div>
-
-
 
       <b-modal id='name-modal' ref='name-modal' 
         header-bg-variant='sm-pink'
@@ -57,20 +56,23 @@ export default {
   data: function () {
     return {
       gameId: '',
-      playerName: ''
+      playerName: '',
+      browseGames: false,
+      requestGameTimer: ''
     };  
   },
 
   mounted() {
-    //this.$store.dispatch('connectToServer');
-
     this.$nextTick(function () {
       this.$bvModal.show('name-modal');
-    })  
+    })
   },
 
   methods: {
     createGame() {
+      window.clearInterval(this.requestGameTimer);
+      this.requestGameTimer = '';
+      this.browseGames = false;
       this.$store.dispatch('createGame');
     },
 
@@ -79,11 +81,24 @@ export default {
     },
 
     joinAvailableGame(inviteCode) {
+      window.clearInterval(this.requestGameTimer);
+      this.requestGameTimer = '';
+      this.browseGames = false;
       this.$store.dispatch('joinGame', inviteCode);
     },
 
     showGames() {
       this.$store.dispatch('showGames');
+      this.browseGames = true;
+      
+      if (this.requestGameTimer == '') {
+        var store = this.$store;
+        this.requestGameTimer = setInterval(function() {
+          store.dispatch('showGames');
+        }, 1000, store);
+
+      }
+
     },
 
     showModal() {

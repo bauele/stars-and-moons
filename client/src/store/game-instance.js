@@ -82,7 +82,7 @@ export const GameInstance = {
             });
 
             socket.on('connect', () => {
-                console.log("socket object = ", socket);     
+                //console.log("socket object = ", socket);     
             })
 
             socket.on('game-created', (inviteCode) => {
@@ -166,10 +166,12 @@ export const GameInstance = {
         },
 
         async showGames(context) {
-            var clientSocket = await context.dispatch('connectToServer');
-            context.commit('setClientSocket', clientSocket);
+            if (context.getters.clientSocket == null) {
+                var clientSocket = await context.dispatch('connectToServer');
+                context.commit('setClientSocket', clientSocket);
+            }
             
-            clientSocket.emit('show-games');
+            context.getters.clientSocket.emit('show-games');
         },
 
         sendChatMessage(context, message) {
