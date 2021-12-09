@@ -28,9 +28,11 @@ var boardXPos = 50;
 var boardYPos = 50;
 var boardWidth = null;
 var boardHeight = null;
+var nativeTokenSize = 126;
 var game = null;
 
 var playerTokens = [];
+var tokenTypes = ['star', 'moon'];
 
 export function createGame() {
     game = new Phaser.Game(config);
@@ -47,17 +49,25 @@ function preload() {
 
     this.load.image('background', './assets/background.png');
     this.load.image('board', './assets/board.png');
+    this.load.image('star', './assets/star.png');
+    this.load.image('moon', './assets/moon.png');
 }
 
 function create() {
     var board = null;
-
     /*  Game's preferred size is 480x480. If the device screen width is smaller
-        than this, scale down based on the amount of screen available. */
-    if (screen.width < 480) {
-        this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(.75);
+        than this, scale down based on the amount of screen available. 
+        
+        Native sizes
+        background.png - 512x512
+        board.png - 960x960
+        tokens - 124x124
+    */
 
-        var boardScale = (screen.width - 100) / 960; // 960 = 
+    if (screen.width < 480) {
+        this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(1);
+
+        var boardScale = (screen.width - 100) / 960;
         board = this.add.sprite(boardXPos, boardYPos, 'board')
             .setOrigin(0, 0).setScale(boardScale).setInteractive();
         boardWidth = board.displayWidth;
@@ -66,7 +76,7 @@ function create() {
         game.scale.resize(boardWidth + 100, boardHeight + 100);
     }
     else {
-        this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(.75);
+        this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(1);
         board = this.add.sprite(boardXPos, boardYPos, 'board')
             .setOrigin(0, 0).setScale(.4).setInteractive();
         boardWidth = board.displayWidth;
@@ -89,12 +99,17 @@ function create() {
             rectY = startY + (gridSize * (i));
     
             for (let j = 0; j < 3; j++) {
-                rectX = startX + (gridSize * (j)) + 30; // centering offset
+                rectX = startX + (gridSize * (j));
     
                 var value = board[i][j];
                 if (value != 0) {
-                    var token = this.add.text(rectX, rectY, value, { fontFamily: 
-                        'Georgia, "Goudy Bookletter 1911", Times, serif', fontSize: 100 });    
+                    var tokenValue = tokenTypes[value-1];
+
+                    var tokenSpriteSize = gridSize * 0.95;
+                    var tokenSpriteScale = tokenSpriteSize / nativeTokenSize;
+                    console.log('tokenSpriteScale = ', tokenSpriteScale);
+                    var token = this.add.sprite(rectX + (gridSize / 2), 
+                        rectY + (gridSize /2), tokenValue).setScale(tokenSpriteScale);
 
                     playerTokens.push(token);
                 }
