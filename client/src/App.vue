@@ -129,7 +129,6 @@ generateRandomName() {
 
       this.gameId = this.$route.params.id;
       if (this.gameId != undefined) {
-        console.log('Attempting to join existing game');
         this.joinGame();
       }
     }

@@ -90,18 +90,15 @@ export const GameInstance = {
             const socket = io.connect(serverAddress, {
             });
 
-            socket.on('connect', () => {
-                //console.log("socket object = ", socket);     
+            socket.on('connect', () => {    
             })
 
             socket.on('game-created', (inviteCode) => {
-                console.log('Creating game...');
                 context.commit('setInGame', true);
                 context.commit('setInviteCode', inviteCode);
             })
 
             socket.on('game-joined', (messages) => {
-                console.log('Successfully joined game!');
                 context.commit('setInGame', true);
             }),
 
@@ -114,7 +111,6 @@ export const GameInstance = {
             }));
 
             socket.on('all-messages-received', (messages) => {
-                console.log(messages);
                 context.commit('setChatMessages', messages);
             })
 
@@ -127,7 +123,6 @@ export const GameInstance = {
             })
 
             socket.on('invite-code-generated', (inviteCode) => {
-                console.log('Got response: ', inviteCode);
                 context.commit('setInviteCode', inviteCode);
             })
 
@@ -154,21 +149,17 @@ export const GameInstance = {
         },
 
         clickBoard(context, area) {
-            console.log("Vuex clicked at area: ", area);
-
             context.getters.clientSocket.emit('click-board', area);
         },
 
         async createGame(context, args) {            
             var clientSocket = await context.dispatch('connectToServer');  
-            console.log('Connected!');
             context.commit('setClientSocket', clientSocket);
             clientSocket.emit('create-game', context.getters.clientPlayerName);
         },
 
         async joinGame(context, inviteCode) {
             var clientSocket = await context.dispatch('connectToServer');
-            console.log('Connected!');
             context.commit('setClientSocket', clientSocket);
 
             context.commit('setInviteCode', inviteCode);
@@ -189,8 +180,6 @@ export const GameInstance = {
         },
 
         sendChatMessage(context, message) {
-            console.log("Sending message to server: ", message);
-
             var messageObject = {sender: context.getters.clientPlayerName,
                                 text: message};
 
@@ -202,7 +191,6 @@ export const GameInstance = {
         },
 
         inviteFriend(context, args) {
-            console.log('Requesting invite link from server!');
             context.getters.clientSocket.emit('invite-friend');
         },
 
