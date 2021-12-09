@@ -77,8 +77,17 @@ export const GameInstance = {
 
     actions: {
         async connectToServer(context) {
-            console.log("Connecting to server...");            
-            const socket = io.connect('localhost:3000', {
+            var serverAddress;
+            if (process.env.VUE_APP_SERVER_PORT == '') {
+                serverAddress = process.env.VUE_APP_SERVER_ADDR;
+            }
+            else {
+                serverAddress = process.env.VUE_APP_SERVER_ADDR 
+                    + ":" + process.env.VUE_APP_SERVER_PORT;
+            }
+
+            console.log("Connecting to server: ", serverAddress);           
+            const socket = io.connect(serverAddress, {
             });
 
             socket.on('connect', () => {

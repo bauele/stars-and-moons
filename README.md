@@ -27,3 +27,11 @@ npm run serve
 ```
 Then simply open a web browser and connect to http://localhost:8080/ to begin
 using the project
+
+## Modifying configurations
+By default, the server will launch on http://localhost:3000/ but the port can be
+changed using the server port variables in the .env file. If the server is 
+being run externally, changes must also be made to the .env file to tell the client
+where to find the server.
+
+The server address and port for the client can be changed in the vue.config.js file.

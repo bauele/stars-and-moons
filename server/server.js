@@ -19,6 +19,8 @@ var io = require('socket.io')(server, {
 const { v4: uuidv4 } = require('uuid');
 const { validate } = require('uuid');
 const randomExt = require('random-ext');
+const dotenv = require('dotenv');
+dotenv.config();
 
 // Map containg a player's socket id and their chosen name
 var playerSocketNameMap = new Map();
@@ -273,7 +275,6 @@ class GameInstance  {
 console.log("Hello from the server!");
 app.use(express.static(__dirname + '/public'));
 
-
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "http://192.168.0.2:8080"); // update to match the domain you will make the request from
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -284,7 +285,7 @@ app.get('/', function (req, res, next) {
     res.sendFile(__dirname + '/index.html');
 });
 
-server.listen(3000, function () {
+server.listen(process.env.SERVER_PORT, function () {
     console.log(`We are now listening on ${server.address().port} \n`);
 })
 
