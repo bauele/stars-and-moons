@@ -60,6 +60,7 @@ export default {
       randomName: '',
       playerName: '',
       browseGames: false,
+      joiningGame: false,
       requestGameTimer: ''
     };  
   },
@@ -129,7 +130,10 @@ generateRandomName() {
 
       this.gameId = this.$route.params.id;
       if (this.gameId != undefined) {
-        this.joinGame();
+        if (!this.joiningGame) {
+          this.joinGame();
+          this.joiningGame = true;
+        }
       }
     }
   },

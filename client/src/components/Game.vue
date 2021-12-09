@@ -65,7 +65,8 @@ export default {
       this.$store.dispatch('inviteFriend');    
       var displayInviteToast = this.$bvToast.show('invite-friend-toast');
 
-      this.$copyText('localhost:8080/' + this.inviteCode).then(
+      var domain = window.location.host;
+      this.$copyText(domain + '/' + this.inviteCode).then(
         function () {
           displayInviteToast;
         }(displayInviteToast), 

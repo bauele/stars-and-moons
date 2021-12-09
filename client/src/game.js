@@ -107,7 +107,6 @@ function create() {
 
                     var tokenSpriteSize = gridSize * 0.95;
                     var tokenSpriteScale = tokenSpriteSize / nativeTokenSize;
-                    console.log('tokenSpriteScale = ', tokenSpriteScale);
                     var token = this.add.sprite(rectX + (gridSize / 2), 
                         rectY + (gridSize /2), tokenValue).setScale(tokenSpriteScale);
 
