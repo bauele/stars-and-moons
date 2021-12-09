@@ -477,7 +477,15 @@ io.on('connection', function (socket) {
                         var restartMessage = new Message('server', 'Game will restart in 5 seconds...');
                         io.to(gameInstance.getInstanceId()).emit('message-received', restartMessage);
     
-                        setTimeout(function() {gameInstance.initialize()}, 5000);
+                        setTimeout(function() {
+                            gameInstance.startGame();
+                            var playerTurnMessage = 
+                                gameInstance.sendPlayerTurnMessage();
+                            io.to(gameInstance.getInstanceId())
+                                .emit('board-updated', gameInstance.getBoard());
+                            io.to(gameInstance.getInstanceId())
+                                .emit('message-received', playerTurnMessage);
+                        }, 5000);
                     }
                     else {
                         gameInstance.incrementTurn();
