@@ -5,7 +5,7 @@ export const GameInstance = {
         inGame: false,
         clientSocket: null,
         clientPlayerName: null,
-        availableGames: null,
+        availableGames: [],
         inviteCode: null,
         chatMessages: [],
         board: null,
