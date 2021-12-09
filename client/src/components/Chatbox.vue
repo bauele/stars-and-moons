@@ -77,9 +77,9 @@ export default {
 /*  Every message div will be responsible for aligning itself
     to the left. */
 #message {
-    display: flex;
-    justify-content: left;
-    margin-left: 3px;    
+    overflow-wrap: break-word;
+    text-align: left;
+    margin-left: 8px;    
 }
 
 .serverMessage {
@@ -102,7 +102,6 @@ export default {
 }
 
 #send-button {
-    height: 37px;
     margin: 10px 10px 5px 5px;    
 }
 </style>
