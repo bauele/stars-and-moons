@@ -3,10 +3,16 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server, {
     cors: {
-    "origin": "*",
-    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-    "preflightContinue": false,
-    "optionsSuccessStatus": 204
+        /*
+        "origin": [  
+                "http://192.168.0.2:8080", 
+                "http://localhost:8080",
+                "*:8080"
+            ],
+        "methods": ["GET,HEAD,PUT,PATCH,POST,DELETE"],
+        "preflightContinue": false,
+        "optionsSuccessStatus": 204
+        */
     }
 });
 
@@ -267,13 +273,11 @@ class GameInstance  {
 console.log("Hello from the server!");
 app.use(express.static(__dirname + '/public'));
 
+
 app.use(function(req, res, next) {
-    /*
-    res.header("Access-Control-Allow-Origin", "http://localhost:8080"); // update to match the domain you will make the request from
-    res.header("Access-Control-Allow-Head
-    ers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header("Access-Control-Allow-Origin", "http://192.168.0.2:8080"); // update to match the domain you will make the request from
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
-    */
   });
 
 app.get('/', function (req, res, next) {
