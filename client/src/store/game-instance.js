@@ -145,6 +145,11 @@ export const GameInstance = {
                 socket.disconnect();
             })
 
+            socket.on('server-timed-out', () => {
+                alert('Your connection to the server has timed out.');
+                context.dispatch('handleTimeout');
+            })
+
             return socket;
         },
 
@@ -200,5 +205,12 @@ export const GameInstance = {
             console.log('Requesting invite link from server!');
             context.getters.clientSocket.emit('invite-friend');
         },
+
+        handleTimeout (context) {
+            context.commit('setInGame', false);
+            context.commit('setInviteCode', null);
+            context.commit('setChatMessages', []);
+            context.commit('updateBoard', null);
+        }
     }
 };

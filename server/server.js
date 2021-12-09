@@ -290,10 +290,10 @@ server.listen(process.env.SERVER_PORT, function () {
 })
 
 io.on('connection', function (socket) {
-    console.log('New connection of ', socket.id);
+    console.log('New connection to server: ', socket.id);
 
     socket.on('disconnect', (reason) => {     
-        console.log('Disconnected from game: ', socket.id);     
+        console.log('Disconnected from server: ', socket.id);     
 
         var gameInstance = playerSocketGameMap.get(socket.id);
         if (gameInstance) {
@@ -374,6 +374,11 @@ io.on('connection', function (socket) {
 
     socket.on('leave-game', function() {
         var gameInstance = playerSocketGameMap.get(socket.id);
+        if (!gameInstance) {
+            console.log('Socket not in game...');
+            socket.emit('server-timed-out');
+            return;  
+        }
         gameInstance.removePlayer(socket.id);
         
         socket.leave(gameInstance.getInstanceId());
@@ -420,6 +425,11 @@ io.on('connection', function (socket) {
 
     socket.on('send-chat-message', function (message) {
         var gameInstance = getActiveGame(socket);
+        if (!gameInstance) {
+            console.log('Socket not in game...');
+            socket.emit('server-timed-out');
+            return;
+        }
         var gameInstanceId = gameInstance.getInstanceId();
 
         var playerChatMessage = new Message(message.sender, message.text); 
@@ -429,12 +439,22 @@ io.on('connection', function (socket) {
     })
 
     socket.on('invite-friend', function (message) {
-       var game = getActiveGame(socket);        
-        socket.emit('invite-code-generated', game.getInviteCode());
+        var gameInstance = getActiveGame(socket);        
+        if (!gameInstance) {
+            console.log('Socket not in game...');
+            socket.emit('server-timed-out');
+            return;
+        }
+        socket.emit('invite-code-generated', gameInstance.getInviteCode());
     })
 
     socket.on('click-board', function (area) {
         var gameInstance = getActiveGame(socket);
+        if (!gameInstance) {
+            console.log('Socket not in game...');
+            socket.emit('server-timed-out');
+            return;
+        }
         if (gameInstance.getPlayerTurn() == socket.id) {
             if (gameInstance.boardPositionAvailable(area.i, area.j)) {
                 var playerValue = gameInstance.getPlayerNumber(socket.id);
