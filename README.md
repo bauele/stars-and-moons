@@ -38,4 +38,5 @@ The server address and port for the client can be changed in the vue.config.js f
 
 ## Asset credits
 The file background.png was created by myself using Spacescape, available [here](https://github.com/petrocket/spacescape)
+
 The following assets were created entirely by myself: board.png, moon.png, star.png
