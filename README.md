@@ -35,3 +35,7 @@ being run externally, changes must also be made to the .env file to tell the cli
 where to find the server.
 
 The server address and port for the client can be changed in the vue.config.js file.
+
+## Asset credits
+The file background.png was created by myself using Spacescape, available [here](https://github.com/petrocket/spacescape)
+The following assets were created entirely by myself: board.png, moon.png, star.png
