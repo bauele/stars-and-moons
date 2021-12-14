@@ -39,7 +39,6 @@
 </template>
 
 <script>
-import Server from './components/Server.vue';
 import Game from "./components/Game.vue";
 
 import {
@@ -50,7 +49,6 @@ import {
 export default {
   name: 'App',
   components: {
-    Server,
     Game
   },
 
