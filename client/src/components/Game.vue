@@ -50,12 +50,6 @@ export default {
     });
   },
 
-  watch: {
-    board: function() {
-      eventEmitter.emit('game-board-updated', this.board);
-    }
-  },
-
   methods: {  
     leaveGame() {
       this.$store.dispatch('leaveGame');
@@ -86,7 +80,6 @@ export default {
   computed: {
     ...mapGetters([
       'inGame',
-      'board',
       'inviteCode'
     ]),
   }

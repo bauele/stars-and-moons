@@ -17,6 +17,10 @@ var config = {
             gravity: { y: 0 }
         }
     },
+    fps: {
+        target: 60,
+        forceSetTimeOut: true
+    },
     scene: {
         preload: preload,
         create: create,
@@ -82,40 +86,34 @@ function create() {
         boardWidth = board.displayWidth;
         boardHeight = board.displayHeight;
     }
-   
-    eventEmitter.on('game-board-updated', (board) => {
-        playerTokens.forEach((token) => {
-           token.destroy();
-        })
 
+    eventEmitter.on('game-board-cleared', () => {        
+        playerTokens.forEach((token) => {
+            token.destroy();
+         })
+    })
+
+    eventEmitter.on('game-board-position-updated', (data) => {
         var startX = boardXPos;
         var startY = boardYPos;
         var gridSize = boardWidth / 3;
     
-        var rectX;
-        var rectY;
+        var rectX = rectX = startX + (gridSize * (data.j));
+        var rectY = startY + (gridSize * (data.i));
+        var value = data.value;
 
-        for (let i = 0; i < 3; i++) {
-            rectY = startY + (gridSize * (i));
-    
-            for (let j = 0; j < 3; j++) {
-                rectX = startX + (gridSize * (j));
-    
-                var value = board[i][j];
-                if (value != 0) {
-                    var tokenValue = tokenTypes[value-1];
+        if (value != 0) {
+            var tokenValue = tokenTypes[value-1];
 
-                    var tokenSpriteSize = gridSize * 0.95;
-                    var tokenSpriteScale = tokenSpriteSize / nativeTokenSize;
-                    var token = this.add.sprite(rectX + (gridSize / 2), 
-                        rectY + (gridSize /2), tokenValue).setScale(tokenSpriteScale);
+            var tokenSpriteSize = gridSize * 0.95;
+            var tokenSpriteScale = tokenSpriteSize / nativeTokenSize;
+            var token = this.add.sprite(rectX + (gridSize / 2), 
+                rectY + (gridSize /2), tokenValue).setScale(tokenSpriteScale);
 
-                    playerTokens.push(token);
-                }
-            }
+            playerTokens.push(token);
         }
-    });
-
+    })
+   
     board.on('pointerdown', function (pointer) {
         var area = calculateQuadrant(pointer.position.x, pointer.position.y, 
             boardXPos, boardYPos, boardWidth, boardHeight);
@@ -124,7 +122,11 @@ function create() {
     });
 }
 
-function update() { }
+function update() { 
+    playerTokens.forEach((token) => {
+        token.angle += 2;
+    })
+}
 
 function calculateQuadrant(mouseX, mouseY, gridX, gridY, gridW, gridH) {
     var quadrantWidth = gridW / 3;

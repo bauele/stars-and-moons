@@ -1,4 +1,5 @@
 const io = require("socket.io-client");
+import { eventEmitter } from "../game";
 
 export const GameInstance = {
     state: {
@@ -40,10 +41,21 @@ export const GameInstance = {
             state.chatMessages.push(message);
         },
 
+        clearBoard(state, board) {
+            state.board = board;
+            eventEmitter.emit('game-board-cleared');
+        },
+
+        // TODO: Remove
         updateBoard(state, board) {
             state.board = board;
+        },
+
+        updateBoardPosition(state, data) {
+            state.board[data.i][data.j] = data.value;
+            eventEmitter.emit('game-board-position-updated', data);
         }
-    },
+     },
 
     getters: {
         inGame: state => {
@@ -118,8 +130,17 @@ export const GameInstance = {
                 context.dispatch('receiveMessage', message);
             })            
 
+            // Update: REMOVE
             socket.on('board-updated', (board) => {
                 context.commit('updateBoard', board);
+            })
+
+            socket.on('board-cleared', (board) => {
+                context.commit('clearBoard', board);
+            })
+
+            socket.on('board-position-updated', (data) => {
+                context.commit('updateBoardPosition', data);
             })
 
             socket.on('invite-code-generated', (inviteCode) => {

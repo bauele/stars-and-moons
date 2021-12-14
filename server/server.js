@@ -381,7 +381,7 @@ io.on('connection', function (socket) {
 
                 // Ensure that both players are seeing the same exact board
                 io.to(gameInstance.getInstanceId())
-                    .emit('board-updated', gameInstance.getBoard());
+                    .emit('board-cleared', gameInstance.getBoard());
 
                 socket.leave('game-requesters');
 
@@ -476,7 +476,8 @@ io.on('connection', function (socket) {
                 gameInstance.setBoardValue(area.i, area.j, playerValue);
 
                 io.to(gameInstance.getInstanceId())
-                    .emit('board-updated', gameInstance.getBoard());
+                    .emit('board-position-updated', {i: area.i, j: area.j, value: playerValue});
+
                 console.log(gameInstance.getBoard());
 
                 // Check for win condition, increment turn if there is no win condition
@@ -497,7 +498,7 @@ io.on('connection', function (socket) {
                             var playerTurnMessage = 
                                 gameInstance.sendPlayerTurnMessage();
                             io.to(gameInstance.getInstanceId())
-                                .emit('board-updated', gameInstance.getBoard());
+                                .emit('board-cleared', gameInstance.getBoard());
                             io.to(gameInstance.getInstanceId())
                                 .emit('message-received', playerTurnMessage);
                         }, 5000);
@@ -526,7 +527,7 @@ io.on('connection', function (socket) {
                         var playerTurnMessage = 
                             gameInstance.sendPlayerTurnMessage();
                         io.to(gameInstance.getInstanceId())
-                            .emit('board-updated', gameInstance.getBoard());
+                            .emit('board-cleared', gameInstance.getBoard());
                         io.to(gameInstance.getInstanceId())
                             .emit('message-received', playerTurnMessage);
                     }, 5000);
