@@ -12,11 +12,11 @@
         <b-button class='pink-button' v-on:click='showGames'>Join Game</b-button>
         
           <b-row v-if='browseGames' class='mt-3'>
-            <p v-if='availableGames.length==0'>Looks like there's no games right now. Wanna create one?</p>
+            <p v-if='joinableGames.length==0'>Looks like there's no games right now. Wanna create one?</p>
             <b-col class='game-item'
-              v-for='game in availableGames' :key='game.id'>
+              v-for='game in joinableGames' :key='game.id'>
                 {{ game.owner }}'s Game
-                <b-button variant='sm-yellow' size='sm' v-on:click='joinAvailableGame(game.inviteCode)'> Join </b-button>
+                <b-button variant='sm-yellow' size='sm' v-on:click='joinJoinableGame(game.inviteCode)'> Join </b-button>
             </b-col>
           </b-row>
       </div>
@@ -61,7 +61,6 @@ export default {
       playerName: '',
       browseGames: false,
       joiningGame: false,
-      requestGameTimer: ''
     };  
   },
 
@@ -74,8 +73,6 @@ export default {
 
   methods: {
     createGame() {
-      window.clearInterval(this.requestGameTimer);
-      this.requestGameTimer = '';
       this.browseGames = false;
       this.$store.dispatch('createGame');
     },
@@ -84,9 +81,7 @@ export default {
       this.$store.dispatch('joinGame', this.gameId);
     },
 
-    joinAvailableGame(inviteCode) {
-      window.clearInterval(this.requestGameTimer);
-      this.requestGameTimer = '';
+    joinJoinableGame(inviteCode) {
       this.browseGames = false;
       this.$store.dispatch('joinGame', inviteCode);
     },
@@ -94,13 +89,6 @@ export default {
     showGames() {
       this.$store.dispatch('showGames');
       this.browseGames = true;
-      
-      if (this.requestGameTimer == '') {
-        var store = this.$store;
-        this.requestGameTimer = setInterval(function() {
-          store.dispatch('showGames');
-        }, 1000, store);
-      }
     },
 
     showModal() {
@@ -141,7 +129,7 @@ generateRandomName() {
   computed: {
     ...mapGetters([
         'inGame',
-        'availableGames',        
+        'joinableGames'     
     ]),
   }
 }

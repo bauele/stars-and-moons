@@ -5,9 +5,9 @@ export const GameInstance = {
         inGame: false,
         clientSocket: null,
         clientPlayerName: null,
-        availableGames: [],
+        joinableGames: [],
         inviteCode: null,
-        chatMessages: [],
+        chatMessages: [], 
         board: null,
     },
 
@@ -28,8 +28,8 @@ export const GameInstance = {
             state.inviteCode = inviteCode;
         },
 
-        setAvailableGames(state, games) {
-            state.availableGames = games;
+        setJoinableGames(state, games) {
+            state.joinableGames = games;
         },
 
         setChatMessages(state, messages) {
@@ -62,8 +62,8 @@ export const GameInstance = {
             return state.clientPlayerName;
         },
 
-        availableGames: state => {
-            return state.availableGames;
+        joinableGames: state => {
+            return state.joinableGames;
         },
 
         inviteCode: state => {
@@ -100,15 +100,15 @@ export const GameInstance = {
 
             socket.on('game-joined', (messages) => {
                 context.commit('setInGame', true);
-            }),
+            })
 
             socket.on('game-left', () => {
                 context.commit('setInGame', false);
             })
 
-            socket.on('games-found', (games => {
-                context.commit('setAvailableGames', games);
-            }));
+            socket.on('joinable-games-updated', (games) => {
+                context.commit('setJoinableGames', games);
+            })
 
             socket.on('all-messages-received', (messages) => {
                 context.commit('setChatMessages', messages);
