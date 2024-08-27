@@ -4,6 +4,8 @@ and vue.js. Players create their own game room on the server and then are given
 an invite link to easily allow their friends to connect to the same room to 
 play.
 
+<img  src="http://data.bauele.com/stars-app.png" width="750" />
+
 ## Project setup
 The project is divided into three directories: client, server, and test. The
 client directory includes all of the front end specific code, such as the UI
